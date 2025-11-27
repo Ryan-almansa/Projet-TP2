@@ -1,5 +1,16 @@
-config.json
-.env2
+node_modules/
+**/node_modules/
+
+package-lock.json
+npm-debug.log*
+
+# Fichiers de log
+*.log
+
+# Fichiers de build 
+/dist
+/build
 .env
 
-
+# Fichiers de l'IDE 
+.vscode/
