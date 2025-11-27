@@ -1,50 +1,83 @@
-const API_URL = "http://172.29.19.24:20001/api";
+// Assurez-vous que api.js est chargé avant script.js dans votre HTML!
 
-async function login() {
-  const username = document.getElementById("username").value;
-  const password = document.getElementById("password").value;
-
-  try {
-    const response = await fetch(`${API_URL}/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password })
-    });
-
-    if (!response.ok) throw new Error(`Erreur serveur ${response.status}`);
-    const data = await response.json();
-
-    if (data.success) {
-      window.location.href = "home.html";
-    } else {
-      document.getElementById("error").innerText = data.message;
+function handleMessage(message, isSuccess = true) {
+    const messageElement = document.getElementById('message');
+    if (messageElement) {
+        messageElement.textContent = message;
+        messageElement.style.color = isSuccess ? 'green' : 'red';
     }
-  } catch (err) {
-    document.getElementById("error").innerText = "Serveur injoignable ou erreur interne";
-    console.error(err);
-  }
 }
 
+/**
+ * Logique pour la page d'inscription (register.html)
+ */
 async function register() {
-  const username = document.getElementById("username").value;
-  const password = document.getElementById("password").value;
-
-  try {
-    const response = await fetch(`${API_URL}/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password })
-    });
-
-    if (!response.ok) throw new Error(`Erreur serveur ${response.status}`);
-    const data = await response.json();
-
-    document.getElementById("message").innerText = data.message;
-    if (data.success) {
-      setTimeout(() => (window.location.href = "index.html"), 1500);
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    
+    if (!username || !password) {
+        handleMessage("Veuillez remplir tous les champs.", false);
+        return;
     }
-  } catch (err) {
-    document.getElementById("message").innerText = "Serveur injoignable ou erreur interne";
-    console.error(err);
-  }
+
+    try {
+        const data = await postData('/register', { username, password });
+        handleMessage(data.message, true);
+        
+        // Redirection après inscription réussie (ex: vers la page de connexion)
+        setTimeout(() => {
+            window.location.href = 'home.html'; 
+        }, 1500);
+
+    } catch (error) {
+        handleMessage(`Échec de l'inscription: ${error.message}`, false);
+    }
 }
+
+
+/**
+ * Logique pour la page de connexion (home.html)
+ */
+async function login() {
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    
+    if (!username || !password) {
+        handleMessage("Veuillez entrer vos identifiants.", false);
+        return;
+    }
+
+    try {
+        const data = await postData('/login', { username, password });
+        handleMessage(data.message, true);
+
+        // Si connexion réussie, enregistrez le statut et redirigez vers la carte
+        localStorage.setItem('isAuthenticated', 'true');
+        setTimeout(() => {
+            // Assurez-vous que c'est le nom de votre page de carte!
+            window.location.href = 'index.html'; 
+        }, 1000);
+
+    } catch (error) {
+        handleMessage(`Échec de la connexion: ${error.message}`, false);
+    }
+}
+
+// Fonction de déconnexion (si vous en avez besoin)
+function logout() {
+    localStorage.removeItem('isAuthenticated');
+    window.location.href = 'home.html';
+}
+
+// Pour s'assurer que l'utilisateur est connecté avant d'accéder à la carte
+function checkAuthentication() {
+    if (window.location.pathname.includes('index.html') || window.location.pathname.includes('map_leaflet.html')) {
+        if (localStorage.getItem('isAuthenticated') !== 'true') {
+            alert("Accès refusé. Veuillez vous connecter.");
+            window.location.href = 'home.html';
+        }
+    }
+}
+
+// Appelez cette vérification au chargement des pages protégées
+// checkAuthentication();

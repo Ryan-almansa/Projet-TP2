@@ -1,20 +1,52 @@
-import express from "express";
-import { createProxyMiddleware } from "http-proxy-middleware";
+// Configuration de l'URL de base de votre serveur provisoire
+const BASE_URL = 'http://localhost:3000/api'; 
 
-const app = express();
+/**
+ * Fonction générique pour effectuer une requête POST
+ * @param {string} endpoint - L'endpoint de l'API (ex: '/register')
+ * @param {object} data - Les données à envoyer (ex: { username, password })
+ */
+async function postData(endpoint, data) {
+    try {
+        const response = await fetch(`${BASE_URL}${endpoint}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        });
 
-app.use(
-  "/api",
-  createProxyMiddleware({
-    target: "http://172.29.19.24:20000",
-    changeOrigin: true,
-    pathRewrite: {},
-    xfwd: true
-  })
-);
+        // Gérer les erreurs HTTP (400, 401, 500, etc.)
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || `Erreur HTTP: ${response.status}`);
+        }
 
-app.use(express.static("/var/www/html"));
+        return await response.json();
 
-app.listen(20001, "0.0.0.0", () => {
-  console.log("🌐 Proxy actif sur http://172.29.19.24:20000");
-});
+    } catch (error) {
+        console.error("Erreur d'API POST:", error);
+        throw error;
+    }
+}
+
+/**
+ * Fonction générique pour effectuer une requête GET
+ * @param {string} endpoint - L'endpoint de l'API (ex: '/gps_positions')
+ */
+async function getData(endpoint) {
+    try {
+        const response = await fetch(`${BASE_URL}${endpoint}`);
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || `Erreur HTTP: ${response.status}`);
+        }
+
+        return await response.json();
+
+    } catch (error) {
+        console.error("Erreur d'API GET:", error);
+        throw error;
+    }
+}
